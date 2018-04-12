@@ -124,7 +124,11 @@ void GoldenPush(void);
 void GoldenShoot_test(uint8_t zone);
 void Golden_Again_Shoot(void);
 void PickHand(void);
-
+void T1_zone(void);
+void T2_zone(void);
+void T3_zone(void);
+void T2_tactic(void);
+void T3_tactic(void);
 Servo ArmServo;
 sensors_event_t event;
 void setup()
@@ -179,21 +183,49 @@ void setup()
 
 void loop()
 {
-  bool t1 = true;
-  while (t1)  { t1 = digitalRead(T1_button);  }
-    Move(420, 100, 140,   30,   0);
+ bool t1 = true; 
+ bool t2 = true; 
+ bool t3 = true;
+ while(t1 & t2 & t3){
+  t1 = digitalRead(T1_button);
+  t2 = digitalRead(T2_button);
+  t3 = digitalRead(T3_button);
+  }
+  if(!t1 & t2 & t3){
+    T1_zone();
+  }
+  else if(t1 & !t2 & t3){
+    T2_tactic();
+  }
+  else if(t1 & t2 & !t3){
+    T3_tactic();
+  }
+ Serial.println("_____________________________________________________________________________________________");
+ while (1)
+    {
+      RotationErrorCalc();
+      SpeedMission = 0;
+      SendMissionToMotorControl();
+      delay(100);
+    }
+}
+void T1_zone(void){
+     Move(420, 100, 140,   30,   0);
     Move(410, 220,  60,   10,   0);
-      
     T1_T2_Shoot(T1);
-    
-    Move(520, 20,    90,  160,   0);
+    T2_zone();
+}
+void T2_zone(void){
+    GoldenMove(590, 360,  50,  20,   0);
+    T1_T2_Shoot(T2);
+    Move(520, 20,    90,  30,   0);
     Move(610, 150,   70,   80,   0);
     Move(590, 220,   50,   20,   0);
     SideSensorsSetup();
-    GoldenMove(590, 360,  50,  20,   0);
-    T1_T2_Shoot(T2);
-    digitalWrite(Buzzer, HIGH);
-  again_shoot:
+    T3_zone();
+}
+void T3_zone(void){
+  digitalWrite(Buzzer, HIGH);
     GoldenMove(600, 640,  100,  40,   0);
     GoldenMove(595, 660,  100,  20,   0);
     digitalWrite(Buzzer, LOW);
@@ -202,19 +234,33 @@ void loop()
     GoldenShoot_test(1);
     GoldenMove(630, 220,  130,  10,   0);
     Golden_Again_Shoot();
-    goto again_shoot;
-    
-    Serial.println("_____________________________________________________________________________________________");
-    while (1)
-    {
-      RotationErrorCalc();
-      SpeedMission = 0;
-      SendMissionToMotorControl();
-      delay(100);
-    }
+    T3_zone();
 }
-
-
+void T2_tactic(void){
+    Move(520, 20,    90,  30,   0);
+    Move(610, 150,   70,   80,   0);
+    Move(590, 220,   50,   20,   0);
+    T1_T2_Shoot(T2);
+    SideSensorsSetup();
+    T3_zone();
+}
+void T3_tactic(void){
+    Move(520, 20,    90,  30,   0);
+    Move(610, 150,   70,   80,   0);
+    Move(590, 220,   50,   20,   0);
+    SideSensorsSetup();
+    GoldenMove(590, 360,  50,  20,   0);
+    digitalWrite(Buzzer, HIGH);
+    GoldenMove(600, 640,  100,  40,   0);
+    GoldenMove(595, 660,  100,  20,   0);
+    digitalWrite(Buzzer, LOW);
+    RotationSetPoint = 0;
+    GoldenPush();
+    GoldenShoot_test(1);
+    GoldenMove(630, 220,  130,  10,   0);
+    Golden_Again_Shoot();
+    T3_zone();
+}
 void RotationErrorCalc(void)
 {
   bno.getEvent(&event);
@@ -531,7 +577,6 @@ void T1_T2_Shoot(uint8_t zone)
     SendMissionToMotorControl();  
     if (zone == T1)
     {
-      
       Right_Sensor.start();
       NavigationCalc();
       CheckRange();
@@ -563,8 +608,8 @@ shoot_again:
     }
     else
     {
-//      ReloadBall();
-//      PickHand();
+//ReloadBall();
+//PickHand();
       tempLeft = digitalRead(CornerIR);
       if(tempLeft == true) { goto shoot_again; }
       else 
